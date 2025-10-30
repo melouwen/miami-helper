@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import os
+import time
 
 # ==== НАСТРОЙКИ ====
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -277,7 +278,7 @@ class ProofButton(discord.ui.View):
         )
 
 
-        class StatusView(discord.ui.View):
+class StatusView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
@@ -290,7 +291,7 @@ class ProofButton(discord.ui.View):
         await interaction.followup.send(f"✅ Бот работает стабильно!\n⏱ Время отклика: {latency_ms} мс", ephemeral=True)
 
 
-    async def send_status_message(channel: discord.TextChannel, proof_image_path: str = None):
+async def send_status_message(channel: discord.TextChannel, proof_image_path: str = None):
     embed = discord.Embed(
         title="Проверка статуса бота",
         description="Нажми на кнопку ниже, чтобы проверить, работает ли бот и узнать время отклика.",
@@ -316,6 +317,7 @@ async def on_ready():
 
     bot.add_view(ProofButton())
     bot.add_view(ProofActionsView())
+    bot.add_view(StatusView())
 
     # === 1. ГЛАВНОЕ СООБЩЕНИЕ С КНОПКОЙ (PROOFS) ===
     channel = bot.get_channel(CHANNEL_ID)
@@ -409,10 +411,24 @@ async def on_ready():
             except Exception as e:
                 print(f"Ошибка при отправке сообщения в канал Redux: {e}")
 
-            import threading
-            from keep_alive import run as keep_run
+    # === 3. СООБЩЕНИЕ О ПРОВЕРКЕ СТАТУСА ===
+    status_channel = bot.get_channel(STATUS_CHANNEL_ID)
+    if status_channel:
+        status_message_sent = False
+        async for message in status_channel.history(limit=20):
+            if message.author == bot.user and message.embeds:
+                embed = message.embeds[0]
+                if embed.title == "Проверка статуса бота":
+                    status_message_sent = True
+                    print("Сообщение о статусе уже существует.")
+                    break
 
-            t = threading.Thread(target=keep_run, daemon=True)
-            t.start()
+        if not status_message_sent:
+            await send_status_message(status_channel)
+            print("Отправлено новое сообщение о проверке статуса.")
+
+    from keep_alive import keep_alive
+
+    keep_alive()  # запускаем веб-сервер для UptimeRobot
 
 bot.run(TOKEN)
