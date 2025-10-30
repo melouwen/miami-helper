@@ -66,6 +66,13 @@ class ProofActionsView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
+    # Новый метод для отключения всех кнопок
+    def disable_all_items(self):
+        """Отключает все кнопки в представлении."""
+        for item in self.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
+
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         og_role = interaction.guild.get_role(OG_ROLE_ID)
         own_role = interaction.guild.get_role(OWN_ROLE_ID)
@@ -126,6 +133,10 @@ class ProofActionsView(discord.ui.View):
 
         success = await _archive_channel(channel, guild, interaction)
         if success:
+            # Отключаем кнопки и обновляем сообщение
+            self.disable_all_items()
+            await interaction.message.edit(view=self)
+
             await interaction.followup.send(f"Ветка закрыта и перемещена в архив: {channel.mention}", ephemeral=True)
             self.stop()
 
@@ -143,6 +154,10 @@ class ProofActionsView(discord.ui.View):
 
         success = await _archive_channel(channel, interaction.guild, interaction)
         if success:
+            # Отключаем кнопки и обновляем сообщение
+            self.disable_all_items()
+            await interaction.message.edit(view=self)
+
             await interaction.followup.send(f"Ветка закрыта и перемещена в архив: {channel.mention}", ephemeral=True)
             self.stop()
 
