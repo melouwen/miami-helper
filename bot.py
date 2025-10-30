@@ -23,6 +23,8 @@ LOCAL_PROOF_IMAGE_PATH = "./assets/dadsad.png"
 # НОВЫЕ НАСТРОЙКИ ДЛЯ СООБЩЕНИЯ О РЕДУКСЕ
 REDUX_CHANNEL_ID = 1431721606039867515
 REDUX_IMAGE_PATH = "0.jpg"  # Файл 0.jpg в корне проекта
+
+STATUS_CHANNEL_ID = 1433425295070986311  # <-- Вставь сюда ID текстового чата для статуса
 # ====================
 
 intents = discord.Intents.default()
@@ -273,6 +275,39 @@ class ProofButton(discord.ui.View):
             f"Ветка для пруфа создана: {thread.mention}",
             ephemeral=True
         )
+
+
+        class StatusView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Проверить статус", style=discord.ButtonStyle.green, custom_id="check_status")
+    async def check_status(self, interaction: discord.Interaction, button: discord.ui.Button):
+        start = time.perf_counter()
+        await interaction.response.defer(ephemeral=True)
+        end = time.perf_counter()
+        latency_ms = round((end - start) * 1000)
+        await interaction.followup.send(f"✅ Бот работает стабильно!\n⏱ Время отклика: {latency_ms} мс", ephemeral=True)
+
+
+    async def send_status_message(channel: discord.TextChannel, proof_image_path: str = None):
+    embed = discord.Embed(
+        title="Проверка статуса бота",
+        description="Нажми на кнопку ниже, чтобы проверить, работает ли бот и узнать время отклика.",
+        color=discord.Color.blue()
+    )
+    if proof_image_path:
+        try:
+            file = discord.File(proof_image_path, filename="proof.png")
+            embed.set_image(url="https://i.pinimg.com/736x/f6/59/fc/f659fc0c84bb73da6aae312b453db539.jpg")
+        except Exception as e:
+            print(f"Ошибка при загрузке изображения: {e}")
+            file = None
+    else:
+        file = None
+
+    view = StatusView()
+    await channel.send(embed=embed, file=file if file else discord.utils.MISSING, view=view)
 
 
 @bot.event
