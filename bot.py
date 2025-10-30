@@ -66,7 +66,7 @@ class ProofActionsView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    # Новый метод для отключения всех кнопок
+    # Метод для отключения всех кнопок
     def disable_all_items(self):
         """Отключает все кнопки в представлении."""
         for item in self.children:
@@ -96,6 +96,17 @@ class ProofActionsView(discord.ui.View):
         guild = interaction.guild
         channel = interaction.channel
         moderator = interaction.user
+
+        # === FAILSAFE: Проверка, не была ли ветка уже архивирована ===
+        if channel.category_id == CATEGORY_ARCHIVE_ID:
+            if not all(item.disabled for item in self.children if isinstance(item, discord.ui.Button)):
+                self.disable_all_items()
+                await interaction.message.edit(view=self)
+
+            await interaction.followup.send("Эта ветка уже была закрыта и архивирована. Кнопки отключены.", ephemeral=True)
+            self.stop()
+            return
+        # =============================================================
 
         try:
             user_id = int(channel.topic.split()[-1])
@@ -133,7 +144,7 @@ class ProofActionsView(discord.ui.View):
 
         success = await _archive_channel(channel, guild, interaction)
         if success:
-            # Отключаем кнопки и обновляем сообщение
+            # Отключаем кнопки и обновляем сообщение после успешной архивации
             self.disable_all_items()
             await interaction.message.edit(view=self)
 
@@ -144,8 +155,20 @@ class ProofActionsView(discord.ui.View):
     async def close_thread(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
 
+        guild = interaction.guild
         channel = interaction.channel
         moderator = interaction.user
+
+        # === FAILSAFE: Проверка, не была ли ветка уже архивирована ===
+        if channel.category_id == CATEGORY_ARCHIVE_ID:
+            if not all(item.disabled for item in self.children if isinstance(item, discord.ui.Button)):
+                self.disable_all_items()
+                await interaction.message.edit(view=self)
+
+            await interaction.followup.send("Эта ветка уже была закрыта и архивирована. Кнопки отключены.", ephemeral=True)
+            self.stop()
+            return
+        # =============================================================
 
         await channel.send(
             f"**Ветка закрыта без выдачи ролей.**\n"
@@ -154,7 +177,7 @@ class ProofActionsView(discord.ui.View):
 
         success = await _archive_channel(channel, interaction.guild, interaction)
         if success:
-            # Отключаем кнопки и обновляем сообщение
+            # Отключаем кнопки и обновляем сообщение после успешной архивации
             self.disable_all_items()
             await interaction.message.edit(view=self)
 
