@@ -427,8 +427,8 @@ async def on_ready():
             await send_status_message(status_channel)
             print("Отправлено новое сообщение о проверке статуса.")
 
-    from keep_alive import keep_alive
+        from keep_alive import keep_alive
 
-    keep_alive()  # запускаем веб-сервер для UptimeRobot
+        keep_alive()  # Запуск веб-сервера
 
-bot.run(TOKEN)
+bot.run(TOKEN)  # Запуск Discord-бота
